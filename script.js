@@ -695,6 +695,9 @@ const printMinisterSheet = async (minister) => {
         printSheet.innerHTML = "";
     }
     printSheet.className = "print-sheet";
+    if (!printSheet.parentElement) {
+        document.body.appendChild(printSheet);
+    }
 
     const ensureText = (value, fallback = "") => {
         if (typeof value !== "string") {
