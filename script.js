@@ -1062,6 +1062,351 @@ const printMinisterSheet = async (minister) => {
     }, 1000);
 };
 
+const DISPLAY_JOB_TITLE_ONLY_GRADES = new Set(["direcab", "direcab-adj", "chefcab", "chefcabadj"]);
+
+const CABINET_LANES = [
+    {
+        key: "direcab",
+        label: "Directeur de Cabinet",
+        rank: 1,
+        grades: new Set(["direcab", "direcab-adj"])
+    },
+    {
+        key: "chefcab",
+        label: "Chef de Cabinet",
+        rank: 2,
+        grades: new Set(["chefcab", "chefcabadj"])
+    },
+    {
+        key: "chefpole",
+        label: "Chef de pôle",
+        rank: 3,
+        grades: new Set(["chefpole"])
+    },
+    {
+        key: "conseiller",
+        label: "Conseiller",
+        rank: 4,
+        grades: new Set(["conseiller"])
+    },
+    {
+        key: "autres",
+        label: "Autres collaborateurs",
+        rank: 99,
+        grades: null
+    }
+];
+
+const CABINET_LANE_LOOKUP = new Map();
+CABINET_LANES.forEach((lane) => {
+    if (lane.grades) {
+        lane.grades.forEach((gradeKey) => {
+            CABINET_LANE_LOOKUP.set(gradeKey, lane.key);
+        });
+    }
+});
+
+const resolveGradeMeta = (gradeLookup, grade) => {
+    const key = canonicaliseCabinetGrade(grade, gradeLookup);
+    if (!key) {
+        return {
+            key: null,
+            code: grade || null,
+            label: grade || null,
+            rank: Number.POSITIVE_INFINITY
+        };
+    }
+
+    const meta = gradeLookup?.byKey?.get(key);
+    if (meta) return meta;
+
+    return {
+        key,
+        code: grade || key,
+        label: grade || key,
+        rank: Number.POSITIVE_INFINITY
+    };
+};
+
+const toCabinetNode = (person, gradeLookup) => {
+    const gradeMeta = resolveGradeMeta(gradeLookup, person?.collab_grade);
+
+    return {
+        id: person?.id != null ? String(person.id) : null,
+        superiorId: person?.superior_id != null ? String(person.superior_id) : null,
+        name: person?.full_name?.trim() || "Collaborateur·rice",
+        cabinetRole: person?.cabinet_role?.trim() || null,
+        jobTitle: person?.job_title?.trim() || null,
+        gradeLabel: gradeMeta?.label || person?.collab_grade?.trim() || null,
+        gradeKey: gradeMeta?.key || null,
+        gradeRank: typeof gradeMeta?.rank === "number" ? gradeMeta.rank : Number.POSITIVE_INFINITY,
+        email: person?.email?.trim() || null,
+        order: typeof person?.cabinet_order === "number" ? person.cabinet_order : null,
+        photo: person?.photo_url || null
+    };
+};
+
+const compareCabinetMembers = (a, b) => {
+    const rankDiff = (a.gradeRank ?? Number.POSITIVE_INFINITY) - (b.gradeRank ?? Number.POSITIVE_INFINITY);
+    if (rankDiff !== 0) return rankDiff;
+
+    const orderA = a.order ?? Number.POSITIVE_INFINITY;
+    const orderB = b.order ?? Number.POSITIVE_INFINITY;
+    if (orderA !== orderB) return orderA - orderB;
+
+    return (a.name || "").localeCompare(b.name || "");
+};
+
+const normaliseCabinetMembers = (collaborators, gradeLookup) => {
+    if (!Array.isArray(collaborators)) return [];
+    return collaborators
+        .map((person) => toCabinetNode(person, gradeLookup))
+        .filter((node) => node?.id)
+        .sort(compareCabinetMembers);
+};
+
+const createCabinetNodeCard = (member) => {
+    const card = document.createElement("article");
+    card.className = "cabinet-node";
+    if (member?.gradeKey) {
+        card.dataset.grade = member.gradeKey;
+    }
+
+    const avatar = document.createElement("div");
+    avatar.className = "cabinet-node-avatar";
+    const avatarImg = document.createElement("img");
+    avatarImg.src = member?.photo || "assets/placeholder-minister.svg";
+    avatarImg.alt = member?.name ? `Portrait de ${member.name}` : "Portrait";
+    avatar.appendChild(avatarImg);
+    card.appendChild(avatar);
+
+    const info = document.createElement("div");
+    info.className = "cabinet-node-info";
+
+    if (member?.gradeLabel) {
+        const badge = document.createElement("span");
+        badge.className = "cabinet-node-grade";
+        badge.textContent = member.gradeLabel;
+        info.appendChild(badge);
+    }
+
+    const name = document.createElement("strong");
+    name.className = "cabinet-node-name";
+    name.textContent = member?.name || "Collaborateur·rice";
+    info.appendChild(name);
+
+    const normalizedRole = member?.cabinetRole?.trim() || null;
+    const normalizedJob = member?.jobTitle?.trim() || null;
+    const normalizedGrade = member?.gradeLabel?.trim() || null;
+
+    const shouldShowJobTitleOnly = DISPLAY_JOB_TITLE_ONLY_GRADES.has(member?.gradeKey);
+
+    if (shouldShowJobTitleOnly) {
+        const titleLine = normalizedJob || normalizedRole || normalizedGrade;
+        if (titleLine) {
+            const title = document.createElement("p");
+            title.className = "cabinet-node-title";
+            title.textContent = titleLine;
+            info.appendChild(title);
+        }
+    } else {
+        if (normalizedRole) {
+            const roleLine = document.createElement("p");
+            roleLine.className = "cabinet-node-role";
+            roleLine.textContent = normalizedRole;
+            info.appendChild(roleLine);
+        }
+
+        if (normalizedJob && normalizedJob !== normalizedRole) {
+            const jobLine = document.createElement("p");
+            jobLine.className = "cabinet-node-title";
+            jobLine.textContent = normalizedJob;
+            info.appendChild(jobLine);
+        }
+    }
+
+    if (member?.email) {
+        const email = document.createElement("a");
+        email.href = `mailto:${member.email}`;
+        email.textContent = member.email;
+        email.className = "cabinet-node-email";
+        email.rel = "noopener";
+        info.appendChild(email);
+    }
+
+    card.appendChild(info);
+    return card;
+};
+
+const groupCabinetMembersByLane = (members, gradeLookup) => {
+    const lanes = new Map();
+
+    const getLaneMeta = (gradeKey) => {
+        if (!gradeKey) return CABINET_LANES.find((lane) => lane.key === "autres");
+        const laneKey = CABINET_LANE_LOOKUP.get(gradeKey) || gradeKey;
+        return (
+            CABINET_LANES.find((lane) => lane.key === laneKey) || {
+                key: laneKey,
+                label: gradeLookup?.byKey?.get(gradeKey)?.label || gradeKey,
+                rank: gradeLookup?.byKey?.get(gradeKey)?.rank ?? Number.POSITIVE_INFINITY,
+                grades: new Set([gradeKey])
+            }
+        );
+    };
+
+    members.forEach((member) => {
+        const laneMeta = getLaneMeta(member.gradeKey);
+        const laneKey = laneMeta.key;
+        if (!lanes.has(laneKey)) {
+            const gradeMeta = gradeLookup?.byKey?.get(member.gradeKey ?? "") || null;
+            const fallbackLabel = gradeMeta?.label || member.gradeLabel || laneMeta.label || laneKey;
+            lanes.set(laneKey, {
+                key: laneKey,
+                label: laneMeta.label || fallbackLabel,
+                rank:
+                    typeof laneMeta.rank === "number"
+                        ? laneMeta.rank
+                        : typeof gradeMeta?.rank === "number"
+                        ? gradeMeta.rank
+                        : member.gradeRank ?? Number.POSITIVE_INFINITY,
+                members: []
+            });
+        }
+        const lane = lanes.get(laneKey);
+        lane.members.push(member);
+    });
+
+    return Array.from(lanes.values())
+        .map((lane) => ({
+            ...lane,
+            members: lane.members.sort(compareCabinetMembers)
+        }))
+        .sort((a, b) => {
+            if (a.rank !== b.rank) return a.rank - b.rank;
+            return (a.label || "").localeCompare(b.label || "");
+        });
+};
+
+const createCabinetHero = (minister, totalMembers) => {
+    const hero = document.createElement("div");
+    hero.className = "cabinet-tree-hero";
+
+    const portrait = document.createElement("img");
+    portrait.className = "cabinet-tree-hero-avatar";
+    portrait.src = minister?.photo ?? "assets/placeholder-minister.svg";
+    portrait.alt = minister?.name ? `Portrait de ${minister.name}` : "Portrait du ministre";
+
+    const info = document.createElement("div");
+    info.className = "cabinet-tree-hero-info";
+
+    const title = document.createElement("strong");
+    title.className = "cabinet-tree-hero-name";
+    title.textContent = minister?.name || "Ministre";
+
+    const subtitle = document.createElement("p");
+    subtitle.className = "cabinet-tree-hero-role";
+    subtitle.textContent = minister?.mission || minister?.portfolio || formatRole(minister?.role) || "Cabinet ministériel";
+
+    const count = document.createElement("span");
+    count.className = "cabinet-tree-hero-count";
+    count.textContent = totalMembers
+        ? `${totalMembers} membre${totalMembers > 1 ? "s" : ""}`
+        : "Aucun collaborateur renseigné";
+
+    info.appendChild(title);
+    info.appendChild(subtitle);
+    info.appendChild(count);
+
+    hero.appendChild(portrait);
+    hero.appendChild(info);
+
+    return hero;
+};
+
+const renderCabinetSection = (minister, collaborators, gradeLookup) => {
+    const lookup = gradeLookup || collaboratorGradesLookup || createGradeLookup(null);
+    const members = normaliseCabinetMembers(collaborators, lookup);
+    const section = document.createElement("section");
+    section.className = "modal-collaborators is-hidden";
+    section.setAttribute("role", "region");
+    section.setAttribute("aria-label", "Cabinet du ministre");
+    section.setAttribute("aria-live", "polite");
+
+    const panel = document.createElement("div");
+    panel.className = "cabinet-panel";
+    section.appendChild(panel);
+
+    const header = document.createElement("header");
+    header.className = "cabinet-panel-header";
+
+    const title = document.createElement("h2");
+    title.className = "cabinet-panel-title";
+    title.textContent = "Collaborateurs";
+    header.appendChild(title);
+
+    const context = document.createElement("p");
+    context.className = "cabinet-panel-context";
+    context.textContent = minister?.name ? `Cabinet de ${minister.name}` : "Organisation du cabinet";
+    header.appendChild(context);
+
+    panel.appendChild(header);
+
+    if (!members.length) {
+        const empty = document.createElement("p");
+        empty.className = "cabinet-empty";
+        empty.textContent = "Les collaborateurs de ce cabinet seront bientôt disponibles.";
+        panel.appendChild(empty);
+        return section;
+    }
+
+    panel.appendChild(createCabinetHero(minister, members.length));
+
+    const lanes = groupCabinetMembersByLane(members, lookup);
+
+    const lanesWrapper = document.createElement("div");
+    lanesWrapper.className = "cabinet-lanes";
+
+    const chunkMembers = (items, size) => {
+        const rows = [];
+        for (let i = 0; i < items.length; i += size) {
+            rows.push(items.slice(i, i + size));
+        }
+        return rows;
+    };
+
+    lanes.forEach((lane) => {
+        if (!lane.members.length) return;
+
+        const laneSection = document.createElement("section");
+        laneSection.className = "cabinet-lane";
+        laneSection.dataset.lane = lane.key;
+
+        const laneTitle = document.createElement("h3");
+        laneTitle.className = "cabinet-lane-title";
+        laneTitle.textContent = lane.label || "Collaborateurs";
+        laneSection.appendChild(laneTitle);
+
+        const rows = chunkMembers(lane.members, 4);
+        rows.forEach((rowMembers, rowIndex) => {
+            const row = document.createElement("div");
+            row.className = "cabinet-lane-row";
+            row.dataset.rowIndex = String(rowIndex);
+
+            rowMembers.forEach((member) => {
+                row.appendChild(createCabinetNodeCard(member));
+            });
+
+            laneSection.appendChild(row);
+        });
+
+        lanesWrapper.appendChild(laneSection);
+    });
+
+    panel.appendChild(lanesWrapper);
+    return section;
+};
+
+
 const openModal = (minister) => {
     if (!modal) return;
     activeMinister = minister;
