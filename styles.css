@@ -1506,6 +1506,180 @@ body.print-all .toolbar {
     border: 1px solid rgba(62, 62, 61, 0.08);
     box-shadow: var(--shadow-soft);
 }
+
+.project-overview {
+    position: relative;
+    overflow: hidden;
+    border-radius: calc(var(--radius-base) * 1.6);
+    background: var(--gradient-header);
+    color: var(--color-guimauve);
+    box-shadow: var(--shadow-hover);
+}
+
+.project-overview::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 12% 18%, rgba(100, 215, 205, 0.35), transparent 55%),
+        radial-gradient(circle at 88% 12%, rgba(105, 135, 255, 0.32), transparent 60%);
+    opacity: 0.9;
+}
+
+.project-overview__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+    padding: clamp(2.5rem, 6vw, 4rem) clamp(1.75rem, 5vw, 3.5rem);
+}
+
+.project-overview__content {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 72ch;
+}
+
+.project-overview__content h2 {
+    font-size: clamp(2.1rem, 5vw, 2.9rem);
+    color: var(--color-perle);
+    margin: 0;
+}
+
+.project-overview__content p {
+    margin: 0;
+    font-size: clamp(1rem, 2.2vw, 1.15rem);
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.project-overview__cta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.project-overview .btn {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: var(--color-encre);
+    border: none;
+    box-shadow: 0 18px 38px rgba(100, 215, 205, 0.35);
+    font-size: 1rem;
+    padding: 0.85rem 1.8rem;
+    border-radius: 999px;
+    transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.project-overview .btn:hover,
+.project-overview .btn:focus-visible {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 24px 48px rgba(105, 135, 255, 0.35);
+    outline: none;
+}
+
+@media (min-width: 900px) {
+    .project-overview__inner {
+        grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
+    }
+
+    .project-overview__cta {
+        justify-content: flex-end;
+    }
+}
+
+.modal.project-modal .modal-content {
+    width: clamp(320px, 88vw, 720px);
+    min-height: auto;
+    max-height: min(92vh, 880px);
+    background: linear-gradient(145deg, rgba(17, 23, 39, 0.98), rgba(39, 8, 59, 0.92));
+    color: var(--color-perle);
+    border-radius: calc(var(--radius-base) * 1.2);
+    border: 1px solid rgba(100, 215, 205, 0.18);
+    box-shadow: 0 40px 90px rgba(17, 23, 39, 0.45);
+}
+
+.project-modal__inner {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+    padding: clamp(2rem, 5vw, 3rem);
+}
+
+.project-modal__header {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.project-modal__eyebrow {
+    margin: 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(100, 215, 205, 0.9);
+    font-weight: 600;
+}
+
+.project-modal__header h3 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4.5vw, 2.4rem);
+    color: var(--color-perle);
+    line-height: 1.2;
+}
+
+.project-modal__body {
+    display: grid;
+    gap: 1.15rem;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.project-modal__links {
+    display: grid;
+    gap: 0.75rem;
+    background: rgba(100, 215, 205, 0.08);
+    border-radius: calc(var(--radius-base) * 1.1);
+    padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.project-modal__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    font-weight: 600;
+    color: var(--accent-primary);
+    background: rgba(17, 23, 39, 0.4);
+    border: 1px solid rgba(100, 215, 205, 0.35);
+    transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.project-modal__link:hover,
+.project-modal__link:focus-visible {
+    transform: translateY(-1px);
+    background: rgba(100, 215, 205, 0.16);
+    border-color: rgba(100, 215, 205, 0.55);
+    outline: none;
+}
+
+.modal.project-modal .modal-close {
+    color: var(--accent-primary);
+}
+
+@media (max-width: 640px) {
+    .project-overview__inner {
+        text-align: left;
+    }
+
+    .project-overview__cta {
+        justify-content: flex-start;
+    }
+
+    .project-modal__link {
+        justify-content: center;
+        text-align: center;
+    }
+}
 .modal-body .modal-collaborators-toggle {
     justify-self: stretch;
     width: 100%;
