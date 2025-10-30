@@ -31,11 +31,19 @@ const scriptJs = fs.readFileSync(scriptPath, 'utf8');
 const configRaw = fs.readFileSync(configPath, 'utf8');
 
 // Strip external resource tags to avoid jsdom trying to fetch them from localhost
-indexHtml = indexHtml
-  .replace(/<link[^>]*href=["']styles\.css["'][^>]*>/i, '')
-  .replace(/<script[^>]*src=["']https:\/\/unpkg\.com\/[@\w\-\.\/=@:]+["'][^>]*><\/script>/gi, '')
-  .replace(/<script[^>]*src=["']config\/supabase\.js["'][^>]*><\/script>/gi, '')
-  .replace(/<script[^>]*src=["']script\.js["'][^>]*><\/script>/gi, '');
+function sanitizeIndexHtml(html) {
+  let previous;
+  do {
+    previous = html;
+    html = html
+      .replace(/<link[^>]*href=["']styles\.css["'][^>]*>/i, '')
+      .replace(/<script[^>]*src=["']https:\/\/unpkg\.com\/[@\w\-\.\/=@:]+["'][^>]*><\/script>/gi, '')
+      .replace(/<script[^>]*src=["']config\/supabase\.js["'][^>]*><\/script>/gi, '')
+      .replace(/<script[^>]*src=["']script\.js["'][^>]*><\/script>/gi, '');
+  } while (html !== previous);
+  return html;
+}
+indexHtml = sanitizeIndexHtml(indexHtml);
 
 function extractVar(name, src) {
   const re = new RegExp(name.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + "\\s*=\\s*['\"]([^'\"]+)['\"]");
