@@ -199,6 +199,23 @@ const modal = document.getElementById("minister-modal");
 const modalBackdrop = modal?.querySelector("[data-dismiss]");
 const modalClose = modal?.querySelector(".modal-close");
 const exportButton = document.getElementById("export-minister-pdf");
+const projectModal = document.getElementById("project-modal");
+const projectModalBackdrop = projectModal?.querySelector(".modal-backdrop");
+const projectModalDismissControls = projectModal ? Array.from(projectModal.querySelectorAll("[data-dismiss]")) : [];
+const projectModalTriggers = Array.from(document.querySelectorAll("[data-open-project-modal]"));
+const projectModalTitle = projectModal?.querySelector("#project-modal-title");
+const projectModalFocusable = projectModal
+    ? () =>
+          projectModal.querySelector(
+              "#project-modal-title, a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])"
+          )
+    : () => null;
+let projectModalLastFocusedElement = null;
+const updateBodyScrollLock = () => {
+    const ministerOpen = modal ? !modal.hidden : false;
+    const projectOpen = projectModal ? !projectModal.hidden : false;
+    document.body.style.overflow = ministerOpen || projectOpen ? "hidden" : "";
+};
 if (exportButton) {
     exportButton.disabled = true;
     exportButton.setAttribute("aria-disabled", "true");
@@ -2681,7 +2698,7 @@ const openModal = async (minister) => {
 
     modal.hidden = false;
     modal.removeAttribute("hidden");
-    document.body.style.overflow = "hidden";
+    updateBodyScrollLock();
 };
 
 const closeModal = () => {
@@ -2710,7 +2727,7 @@ const closeModal = () => {
         toggleButton.setAttribute('aria-expanded', 'false');
         toggleButton.dataset.cabinetState = 'closed';
     }
-    document.body.style.overflow = "";
+    updateBodyScrollLock();
     cleanupPrintSheet();
     if (exportButton) {
         exportButton.onclick = null;
@@ -2798,6 +2815,34 @@ const refreshGridForPrint = () => {
         renderGrid(coreMinisters);
     } else {
         applyFilters();
+    }
+};
+
+const openProjectModal = () => {
+    if (!projectModal) return;
+    projectModalLastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    projectModal.hidden = false;
+    projectModal.removeAttribute("hidden");
+    updateBodyScrollLock();
+    const focusTarget = projectModalTitle ?? projectModalFocusable();
+    if (focusTarget instanceof HTMLElement) {
+        requestAnimationFrame(() => {
+            focusTarget.focus({ preventScroll: true });
+        });
+    }
+};
+
+const closeProjectModal = () => {
+    if (!projectModal) return;
+    projectModal.hidden = true;
+    projectModal.setAttribute("hidden", "");
+    updateBodyScrollLock();
+    const target = projectModalLastFocusedElement;
+    projectModalLastFocusedElement = null;
+    if (target && typeof target.focus === "function") {
+        requestAnimationFrame(() => {
+            target.focus({ preventScroll: true });
+        });
     }
 };
 
@@ -3308,10 +3353,26 @@ const initApp = () => {
 
     modalBackdrop?.addEventListener("click", closeModal);
     modalClose?.addEventListener("click", closeModal);
+    projectModalBackdrop?.addEventListener("click", closeProjectModal);
+    projectModalDismissControls.forEach((control) => {
+        control.addEventListener("click", () => {
+            closeProjectModal();
+        });
+    });
+    projectModalTriggers.forEach((trigger) => {
+        trigger.addEventListener("click", (event) => {
+            event.preventDefault();
+            openProjectModal();
+        });
+    });
     exportPageButton?.addEventListener("click", printAllMinisters);
     window.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !modal.hidden) {
-            closeModal();
+        if (event.key === "Escape") {
+            if (projectModal && !projectModal.hidden) {
+                closeProjectModal();
+            } else if (modal && !modal.hidden) {
+                closeModal();
+            }
         }
     });
 

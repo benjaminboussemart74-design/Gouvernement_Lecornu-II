@@ -167,6 +167,29 @@
                 </div>
             </div>
         </section>
+
+        <section class="section project-overview" aria-labelledby="project-overview-title">
+            <div class="project-overview__inner">
+                <div class="project-overview__content">
+                    <h2 id="project-overview-title">Découvrir l'expérience Rumeur Maps</h2>
+                    <p>
+                        Rumeur Publique imagine des dispositifs d'influence et de communication sur-mesure pour éclairer les enjeux
+                        politiques et économiques. Avec la plateforme Rumeur Maps, nos équipes cartographient les acteurs clefs,
+                        orchestrent la veille et activent les bons leviers pour accompagner les organisations dans leurs dialogues
+                        institutionnels.
+                    </p>
+                    <p>
+                        Explorez notre démarche, ses piliers méthodologiques et les formats de collaboration possibles pour bâtir un
+                        programme d'action adapté à vos priorités.
+                    </p>
+                </div>
+                <div class="project-overview__cta">
+                    <button class="btn btn-primary" type="button" data-open-project-modal>
+                        Explorer la présentation du projet
+                    </button>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- ================= FOOTER ================= -->
@@ -181,6 +204,53 @@
             <a class="btn btn-ghost" href="#top">Remonter en haut</a>
         </div>
     </footer>
+
+    <div class="modal project-modal" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" hidden>
+        <div class="modal-backdrop" data-dismiss></div>
+        <div class="modal-content" role="document">
+            <button class="modal-close" type="button" aria-label="Fermer" data-dismiss>&times;</button>
+            <div class="project-modal__inner">
+                <header class="project-modal__header">
+                    <p class="project-modal__eyebrow">Rumeur Maps</p>
+                    <h3 id="project-modal-title" tabindex="-1">Un accompagnement stratégique clé en main</h3>
+                </header>
+                <div class="project-modal__body">
+                    <p>
+                        Nous concevons des dispositifs d'influence et de réputation qui articulent cartographie des acteurs,
+                        narration stratégique et mobilisation sur l'ensemble des canaux institutionnels. Chaque mission s'appuie sur
+                        notre cellule d'analystes, nos outils de veille et la créativité éditoriale de l'agence.
+                    </p>
+                    <p>
+                        Besoin d'un diagnostic, d'un plan d'engagement ou d'un accompagnement sur la durée&nbsp;? Parlons-en pour
+                        co-construire la feuille de route la plus pertinente pour vos enjeux.
+                    </p>
+                </div>
+                <div class="project-modal__links" role="list">
+                    <a role="listitem" class="project-modal__link" href="mailto:contact@rumeurpublique.com" data-dismiss>
+                        Écrire à contact@rumeurpublique.com
+                    </a>
+                    <a
+                        role="listitem"
+                        class="project-modal__link"
+                        href="https://www.rumeurpublique.fr"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Visiter rumeurpublique.fr
+                    </a>
+                    <a
+                        role="listitem"
+                        class="project-modal__link"
+                        href="https://www.linkedin.com/company/rumeur-publique/"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Echanger sur LinkedIn
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ================= MODALE MINISTRE ================= -->
     <div class="modal" id="minister-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
