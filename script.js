@@ -3670,53 +3670,63 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btn) return;
     btn.addEventListener('click', () => {
         const user = btn.dataset.u || 'contact';
-        const domain = btn.dataset.d || 'rumeurpublique.fr';
+        const domain = btn.dataset.d || 'domainrumeurpublique.fr';
         window.location.href = `mailto:${user}@${domain}`;
     });
 });
 
-const initApp = () => {
-    if (__appInitialized) return;
-    __appInitialized = true;
-
-    modalBackdrop?.addEventListener("click", closeModal);
-    modalClose?.addEventListener("click", closeModal);
-    exportPageButton?.addEventListener("click", printAllMinisters);
-    window.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !modal.hidden) {
-            closeModal();
-        }
-    });
-
-    // Lancer le chargement des données
+// Lancer le chargement des données
+document.addEventListener('DOMContentLoaded', () => {
     loadMinisters().then(() => {
+        initApp();
     }).catch((err) => {
         console.error("[onepage] Echec du chargement initial", err);
         // Debug banner minimal pour diagnostiquer rapidement en front
         try {
             const banner = document.createElement('div');
-            banner.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:rgba(209,0,123,0.1);border-top:1px solid rgba(209,0,123,0.35);color:#4B2579;padding:8px 12px;font:600 13px/1.4 \"Space Grotesk\",system-ui;backdrop-filter:saturate(120%) blur(2px)';
+            banner.style.cssText = [
+                'position:fixed',
+                'left:0',
+                'right:0', 
+                'bottom:0',
+                'z-index:9999',
+                'background:rgba(209,0,123,0.1)',
+                'border-top:1px solid rgba(209,0,123,0.35)',
+                'color:#4B2579',
+                'padding:8px 12px',
+                'font:600 13px/1.4 \'Space Grotesk\',system-ui',
+                'backdrop-filter:saturate(120%) blur(2px)'
+            ].join(';');
             banner.textContent = 'Diagnostic: échec du chargement des données. Vérifiez data/ministers/index.json et les fichiers individuels.';
             document.body.appendChild(banner);
             setTimeout(() => banner.remove(), 6000);
         } catch { /* no-op */ }
     });
-};
+});
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initApp, { once: true });
-} else {
-    initApp();
-}
+function initApp() {
+    // Initialize modal close handlers
+    if (modalClose) {
+        modalClose.addEventListener('click', closeModal);
+    }
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener('click', closeModal);
+    }
+    // Close modal on Escape key
+    document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' && modal && !modal.hidden) {
+            closeModal();
+        }
+    });
 
-// Header quick search: navigate to a minister or ministry card
-const headerSearchForm = document.getElementById("header-search");
-const headerSearchInput = document.getElementById("header-search-input");
-const headerSearchToggle = document.getElementById("header-search-toggle");
-const headerSuggestionsEl = document.getElementById("header-search-suggestions");
+    // Header quick search: navigate to a minister or ministry card
+    const headerSearchForm = document.getElementById("header-search");
+    const headerSearchInput = document.getElementById("header-search-input");
+    const headerSearchToggle = document.getElementById("header-search-toggle");
+    const headerSuggestionsEl = document.getElementById("header-search-suggestions");
 
-let _headerSearchIndex = [];
-const buildHeaderSearchIndex = () => {
+    let _headerSearchIndex = [];
+    const buildHeaderSearchIndex = () => {
     const people = (coreMinisters || []).concat(delegateMinisters || []);
     const seen = new Set();
     const items = [];
@@ -4026,4 +4036,5 @@ if (headerSearchForm && headerSearchInput) {
             }
         });
     }
+}
 }

@@ -2,6 +2,8 @@
 .DS_Store
 
 # Node / editor folders (safe defaults)
+.env
+.env.local
 scripts/cabinet-tree-rpc.js
 scripts/csv-to-json.js
 scripts/floating-loupe.js
@@ -16,3 +18,5 @@ scripts/test_modal_population.js
 scripts/validate_careers_order.js
 scripts/validate_lecornu.js
 scripts/validate-json.js
+
+ssh-keygen -t ed25519 -C "benjaminb@github.com"
